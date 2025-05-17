@@ -1,0 +1,60 @@
+
+
+services:
+  server:
+    env_file:
+      - .env
+    build:
+      context: ./
+      dockerfile: .dockerfiles/backend.dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+    environment:
+      OLLAMA_URL: "${OLLAMA_URL}"
+      DB_URL: "${DB_URL}"
+    networks:
+      - ollama-docker
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - 7869:11434
+    volumes:
+      - .:/code
+      - ./ollama/ollama:/root/.ollama
+    container_name: ollama
+    pull_policy: always
+    restart: always
+    tty: true
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - ollama-docker
+  db:
+    image: pgvector/pgvector:pg17
+    ports:
+      - 5433:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+    networks:
+      - ollama-docker
+  
+networks:
+  ollama-docker:
+    external: false
+
+volumes:
+  backend:
+  ollama:
+  db:
+      
+    
